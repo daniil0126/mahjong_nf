@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { GameState, LayoutName } from '@/types/game'
 import { formatTime } from '@/lib/utils'
-import { Undo2, Lightbulb, Shuffle, RotateCcw, Bot, HelpCircle } from 'lucide-react'
+import { Undo2, Lightbulb, Shuffle, RotateCcw, HelpCircle, Leaf } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface GameControlsProps {
@@ -12,10 +12,11 @@ interface GameControlsProps {
   onHint: () => void
   onShuffle: () => void
   onNewGame: (layout?: LayoutName) => void
-  onAICoach: () => void
   onTutorial?: () => void
   onTick: (ms: number) => void
-  isPro: boolean
+  zenActive?: boolean
+  onZenToggle?: () => void
+  zenPulse?: boolean
 }
 
 const LAYOUTS: { id: LayoutName; label: string }[] = [
@@ -25,7 +26,7 @@ const LAYOUTS: { id: LayoutName; label: string }[] = [
   { id: 'cross', label: 'Крест' },
 ]
 
-export default function GameControls({ state, onUndo, onHint, onShuffle, onNewGame, onAICoach, onTutorial, onTick, isPro }: GameControlsProps) {
+export default function GameControls({ state, onUndo, onHint, onShuffle, onNewGame, onTutorial, onTick, zenActive, onZenToggle, zenPulse }: GameControlsProps) {
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
@@ -59,7 +60,7 @@ export default function GameControls({ state, onUndo, onHint, onShuffle, onNewGa
         <IconBtn onClick={onUndo} disabled={state.undoStack.length === 0} title="Отменить ход">
           <Undo2 size={18} />
         </IconBtn>
-        <IconBtn onClick={onHint} title={`Подсказка${!isPro ? ' (3/день)' : ''}`}>
+        <IconBtn onClick={onHint} title="Подсказка">
           <Lightbulb size={18} />
         </IconBtn>
         <IconBtn onClick={onShuffle} title="Перемешать">
@@ -91,21 +92,24 @@ export default function GameControls({ state, onUndo, onHint, onShuffle, onNewGa
           </button>
         ))}
 
-        <div className="ml-auto">
-          <button
-            onClick={onAICoach}
-            className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
-              isPro
-                ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-md'
-                : 'bg-stone-200 dark:bg-stone-700 text-stone-500 dark:text-stone-400'
-            )}
-            title={isPro ? 'AI Coach' : 'AI Coach (Pro)'}
-          >
-            <Bot size={16} />
-            {isPro ? 'AI Coach' : '🔒 Pro'}
-          </button>
-        </div>
+        {onZenToggle && (
+          <div className="ml-auto">
+            <button
+              onClick={onZenToggle}
+              title={zenActive ? 'Выключить анти-стресс' : 'Включить анти-стресс'}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
+                zenActive
+                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md'
+                  : 'bg-stone-200 dark:bg-stone-700 hover:bg-emerald-100 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-200',
+                zenPulse && !zenActive && 'zen-pulse',
+              )}
+            >
+              <Leaf size={16} />
+              Анти-стресс
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

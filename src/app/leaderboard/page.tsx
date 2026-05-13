@@ -1,4 +1,4 @@
-import { Trophy, Medal } from 'lucide-react'
+import { Trophy } from 'lucide-react'
 
 // Placeholder data — будет заменена Supabase данными
 const MOCK_ENTRIES = [

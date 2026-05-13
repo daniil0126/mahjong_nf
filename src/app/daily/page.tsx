@@ -1,12 +1,11 @@
 'use client'
 
-import { useCallback, useReducer, useEffect, useState } from 'react'
-import { GameState, LayoutName } from '@/types/game'
+import { useCallback, useReducer } from 'react'
+import { GameState } from '@/types/game'
 import { createGame, selectTile, undoMove, applyHint } from '@/lib/game-engine'
 import { dateToSeed } from '@/lib/utils'
 import GameBoard from '@/components/game/GameBoard'
 import GameControls from '@/components/game/GameControls'
-import GameOverModal from '@/components/game/GameOverModal'
 import { Calendar, Users } from 'lucide-react'
 
 type Action =
@@ -58,9 +57,7 @@ export default function DailyPage() {
         onHint={() => dispatch({ type: 'HINT' })}
         onShuffle={() => {}} // No shuffle in daily
         onNewGame={() => {}} // No new game in daily
-        onAICoach={() => {}}
         onTick={onTick}
-        isPro={false}
       />
 
       <div className="w-full bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 p-4 overflow-hidden">

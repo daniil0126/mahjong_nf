@@ -23,6 +23,13 @@ export interface Tile {
 
 export type Theme = 'japanese' | 'chinese' | 'silk-road'
 
+export interface UndoSnapshot {
+  tiles: Tile[]
+  score: number
+  moves: number
+  hintsUsed: number
+}
+
 export interface GameState {
   tiles: Tile[]
   selectedTileId: string | null
@@ -35,7 +42,7 @@ export interface GameState {
   isDeadlock: boolean
   layout: LayoutName
   theme: Theme
-  undoStack: Tile[][]
+  undoStack: UndoSnapshot[]
   hintPair: [string, string] | null
 }
 

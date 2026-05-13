@@ -50,7 +50,7 @@ export default function GameBoard({ state, onTileClick }: GameBoardProps) {
     return set
   }, [state.tiles])
 
-  const hintSet = new Set(state.hintPair ?? [])
+  const hintSet = useMemo(() => new Set(state.hintPair ?? []), [state.hintPair])
 
   return (
     <div className="w-full overflow-auto flex justify-center">

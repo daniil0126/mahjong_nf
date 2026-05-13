@@ -199,7 +199,15 @@ export function selectTile(state: GameState, tileId: string): GameState {
     moves: nextMoves,
     isComplete,
     isDeadlock: deadlock,
-    undoStack: [...state.undoStack, state.tiles],
+    undoStack: [
+      ...state.undoStack,
+      {
+        tiles: state.tiles,
+        score: state.score,
+        moves: state.moves,
+        hintsUsed: state.hintsUsed,
+      },
+    ],
   }
 }
 
@@ -208,7 +216,10 @@ export function undoMove(state: GameState): GameState {
   const prev = state.undoStack[state.undoStack.length - 1]
   return {
     ...state,
-    tiles: prev,
+    tiles: prev.tiles,
+    score: prev.score,
+    moves: prev.moves,
+    hintsUsed: prev.hintsUsed,
     selectedTileId: null,
     hintPair: null,
     isComplete: false,

@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Trophy, RefreshCcw, XCircle } from 'lucide-react'
+import { RefreshCcw } from 'lucide-react'
 import { GameState, LayoutName } from '@/types/game'
 import { formatTime } from '@/lib/utils'
 

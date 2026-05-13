@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { motion } from 'framer-motion'
 import { Tile as TileType } from '@/types/game'
 import { cn } from '@/lib/utils'
@@ -27,7 +28,7 @@ const SUIT_COLORS: Record<string, string> = {
 const BODY_COLOR = '#c9a86b'      // the warm "thickness" of the tile, visible at bottom-left
 const BODY_EDGE = '#6e5430'       // dark outline around the body
 
-export default function TileComponent({
+function TileComponent({
   tile,
   isHinted,
   isFreeTile,
@@ -160,3 +161,21 @@ export default function TileComponent({
     </>
   )
 }
+
+export default memo(TileComponent, (prev, next) => {
+  return (
+    prev.tile.id === next.tile.id &&
+    prev.tile.removed === next.tile.removed &&
+    prev.tile.selected === next.tile.selected &&
+    prev.tile.def === next.tile.def &&
+    prev.tile.layer === next.tile.layer &&
+    prev.tile.row === next.tile.row &&
+    prev.tile.col === next.tile.col &&
+    prev.isHinted === next.isHinted &&
+    prev.isFreeTile === next.isFreeTile &&
+    prev.tileWidth === next.tileWidth &&
+    prev.tileHeight === next.tileHeight &&
+    prev.depthOffset === next.depthOffset &&
+    prev.onClick === next.onClick
+  )
+})
