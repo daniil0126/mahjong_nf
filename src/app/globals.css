@@ -28,3 +28,23 @@ body {
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #a8a29e; border-radius: 3px; }
+
+@keyframes zen-fall {
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 0; }
+  8%   { opacity: 0.85; }
+  92%  { opacity: 0.85; }
+  100% { transform: translate3d(var(--zen-drift, 30px), 110vh, 0) rotate(var(--zen-spin, 360deg)); opacity: 0; }
+}
+.zen-particle {
+  position: absolute;
+  pointer-events: none;
+  will-change: transform, opacity;
+  animation: zen-fall linear infinite;
+  user-select: none;
+}
+
+@keyframes zen-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(244, 114, 182, 0.6); }
+  50%      { box-shadow: 0 0 0 8px rgba(244, 114, 182, 0); }
+}
+.zen-pulse { animation: zen-pulse 1.8s ease-out infinite; }

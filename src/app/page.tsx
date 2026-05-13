@@ -1,5 +1,7 @@
 import Link from 'next/link'
-import { ArrowRight, Calendar, Trophy, Bot, Sparkles } from 'lucide-react'
+import Image from 'next/image'
+import { ArrowRight, Calendar } from 'lucide-react'
+import { ZEN_THEMES } from '@/lib/zen-themes'
 
 export default function HomePage() {
   return (
@@ -14,7 +16,7 @@ export default function HomePage() {
           <span className="text-amber-500">отдыха</span>
         </h1>
         <p className="text-lg sm:text-xl text-stone-500 dark:text-stone-400 max-w-xl">
-          Классическая головоломка с AI-тренером, ежедневными соревнованиями и красивыми культурными темами
+          Классическая головоломка с режимом понижения стресса, ежедневными соревнованиями и красивыми культурными темами
         </p>
         <div className="flex flex-col sm:flex-row gap-3">
           <Link
@@ -46,9 +48,9 @@ export default function HomePage() {
             desc: 'Одна раскладка для всех каждый день. Глобальный рейтинг.',
           },
           {
-            icon: '🤖',
-            title: 'AI Coach',
-            desc: 'ИИ анализирует доску и подсказывает стратегию. Pro-фича.',
+            icon: '🧘',
+            title: 'Анти-стресс режим',
+            desc: 'Платформа замечает напряжение по кликам или пульсу и переключает в спокойную сцену.',
           },
           {
             icon: '🌏',
@@ -69,43 +71,27 @@ export default function HomePage() {
 
       {/* Themes preview */}
       <section className="text-center flex flex-col gap-6">
-        <h2 className="text-2xl font-bold text-stone-800 dark:text-stone-100">Культурные темы</h2>
+        <h2 className="text-2xl font-bold text-stone-800 dark:text-stone-100">Анти-стресс темы</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            { name: 'Японский сад', emoji: '🌸', color: 'from-pink-100 to-rose-100 dark:from-pink-950 dark:to-rose-950', free: true },
-            { name: 'Древний Китай', emoji: '🏮', color: 'from-red-100 to-orange-100 dark:from-red-950 dark:to-orange-950', free: true },
-            { name: 'Шёлковый путь', emoji: '✨', color: 'from-amber-100 to-yellow-100 dark:from-amber-950 dark:to-yellow-950', free: false },
-          ].map(t => (
+          {ZEN_THEMES.map(t => (
             <div
-              key={t.name}
-              className={`bg-gradient-to-br ${t.color} rounded-2xl p-6 border border-stone-200 dark:border-stone-800 flex flex-col items-center gap-2`}
+              key={t.id}
+              className="relative rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 aspect-[4/3] group"
             >
-              <span className="text-4xl">{t.emoji}</span>
-              <span className="font-semibold text-stone-800 dark:text-stone-100">{t.name}</span>
-              {!t.free && (
-                <span className="text-xs px-2 py-0.5 bg-amber-400/20 text-amber-700 dark:text-amber-400 rounded-full font-medium">Pro</span>
-              )}
+              <Image
+                src={t.image}
+                alt={t.label}
+                fill
+                sizes="(max-width: 640px) 100vw, 33vw"
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+              <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 text-white">
+                <span className="text-2xl">{t.emoji}</span>
+                <span className="font-semibold drop-shadow">{t.label}</span>
+              </div>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* Pro CTA */}
-      <section className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-3xl p-8 text-white text-center flex flex-col items-center gap-4">
-        <Sparkles size={32} />
-        <h2 className="text-2xl font-bold">Upgrade to Pro</h2>
-        <p className="text-amber-100 max-w-md">
-          AI Coach, эксклюзивные темы, безлимитные подсказки и подробная статистика
-        </p>
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          <span className="text-3xl font-bold">$4.99</span>
-          <span className="text-amber-200">в месяц</span>
-          <Link
-            href="/pro"
-            className="px-6 py-3 bg-white text-amber-600 font-bold rounded-xl hover:bg-amber-50 transition-all ml-0 sm:ml-4"
-          >
-            Попробовать Pro
-          </Link>
         </div>
       </section>
     </div>
