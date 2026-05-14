@@ -1,7 +1,6 @@
 'use client'
 
 import { memo } from 'react'
-import { motion } from 'framer-motion'
 import { Tile as TileType } from '@/types/game'
 import { cn } from '@/lib/utils'
 
@@ -57,17 +56,14 @@ function TileComponent({
   const bodyZ = tile.layer * 100
   const faceZ = tile.layer * 100 + tile.row + tile.col + 1
 
-  const baseTransition = { duration: 0.25 }
-  const removedAnim = tile.removed
-    ? { opacity: 0, scale: 0.8 }
-    : { opacity: 1, scale: 1 }
+  const transition = 'opacity 220ms ease, transform 220ms ease'
+  const opacity = tile.removed ? 0 : 1
+  const transform = tile.removed ? 'scale(0.8)' : 'scale(1)'
 
   return (
     <>
-      {/* BODY — the dark "thickness" of the tile + drop shadow. Renders BEHIND every face. */}
-      <motion.div
-        animate={removedAnim}
-        transition={baseTransition}
+      {/* BODY — the dark "thickness" of the tile + cast shadow. Renders BEHIND every face. */}
+      <div
         style={{
           position: 'absolute',
           left: bodyX,
@@ -79,14 +75,15 @@ function TileComponent({
           border: `1px solid ${BODY_EDGE}`,
           borderRadius: 5,
           pointerEvents: 'none',
-          filter: `drop-shadow(${dropX}px ${dropY}px ${dropBlur}px rgba(0,0,0,${dropAlpha.toFixed(2)}))`,
+          boxShadow: `${dropX}px ${dropY}px ${dropBlur}px rgba(0,0,0,${dropAlpha.toFixed(2)})`,
+          transition,
+          opacity,
+          transform,
         }}
       />
 
-      {/* FACE — the ivory top of the tile, with the symbol. Higher z than every body in the same layer. */}
-      <motion.div
-        animate={removedAnim}
-        transition={baseTransition}
+      {/* FACE — the ivory top of the tile, with the symbol. */}
+      <div
         style={{
           position: 'absolute',
           left: faceX,
@@ -94,20 +91,21 @@ function TileComponent({
           width: tileWidth,
           height: tileHeight,
           zIndex: faceZ,
+          transition,
+          opacity,
+          transform,
         }}
         onClick={() => !tile.removed && onClick(tile.id)}
         className={cn(
-          'select-none',
+          'select-none tile-face',
+          isFreeTile && !tile.removed && 'tile-face--interactive',
           isFreeTile ? 'cursor-pointer' : 'cursor-not-allowed',
           tile.removed && 'pointer-events-none',
         )}
-        whileHover={isFreeTile && !tile.removed ? { scale: 1.04, transition: { duration: 0.1 } } : undefined}
-        whileTap={isFreeTile && !tile.removed ? { scale: 0.97 } : undefined}
       >
         <div
           className={cn(
             'absolute inset-0 rounded-md border flex items-center justify-center overflow-hidden',
-            'transition-colors duration-150',
             tile.selected
               ? 'border-amber-600 ring-2 ring-amber-400'
               : isHinted
@@ -157,7 +155,7 @@ function TileComponent({
             {tile.def.symbol}
           </span>
         </div>
-      </motion.div>
+      </div>
     </>
   )
 }

@@ -97,26 +97,21 @@ export function createGame(layout: LayoutName, seed?: number): GameState {
 // 2. At least one horizontal side is clear
 export function isFree(tile: Tile, tiles: Tile[]): boolean {
   if (tile.removed) return false
-  const active = tiles.filter(t => !t.removed && t.id !== tile.id)
 
-  const coveredAbove = active.some(t =>
-    t.layer === tile.layer + 1 &&
-    Math.abs(t.row - tile.row) < 2 &&
-    Math.abs(t.col - tile.col) < 2
-  )
-  if (coveredAbove) return false
-
-  const hasLeft = active.some(t =>
-    t.layer === tile.layer &&
-    Math.abs(t.row - tile.row) < 2 &&
-    t.col === tile.col - 2
-  )
-  const hasRight = active.some(t =>
-    t.layer === tile.layer &&
-    Math.abs(t.row - tile.row) < 2 &&
-    t.col === tile.col + 2
-  )
-
+  let hasLeft = false
+  let hasRight = false
+  for (let i = 0; i < tiles.length; i++) {
+    const t = tiles[i]
+    if (t.removed || t === tile) continue
+    const dr = t.row - tile.row
+    if (dr <= -2 || dr >= 2) continue
+    if (t.layer === tile.layer + 1 && Math.abs(t.col - tile.col) < 2) return false
+    if (t.layer === tile.layer) {
+      const dc = t.col - tile.col
+      if (dc === -2) hasLeft = true
+      else if (dc === 2) hasRight = true
+    }
+  }
   return !hasLeft || !hasRight
 }
 

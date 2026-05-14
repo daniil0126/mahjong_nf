@@ -48,3 +48,11 @@ body {
   50%      { box-shadow: 0 0 0 8px rgba(244, 114, 182, 0); }
 }
 .zen-pulse { animation: zen-pulse 1.8s ease-out infinite; }
+
+.tile-face--interactive > div {
+  transition: filter 120ms ease, box-shadow 120ms ease;
+}
+.tile-face--interactive:hover > div {
+  filter: brightness(1.08);
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.55) inset;
+}
