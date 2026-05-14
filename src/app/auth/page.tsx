@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Mail, Lock, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -8,6 +8,16 @@ import { createClient } from '@/lib/supabase/client'
 type Mode = 'signin' | 'signup'
 
 export default function AuthPage() {
+  // useSearchParams() in the inner component requires a Suspense boundary for
+  // Next.js to be able to statically prerender the shell.
+  return (
+    <Suspense fallback={null}>
+      <AuthPageContent />
+    </Suspense>
+  )
+}
+
+function AuthPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const next = searchParams.get('next') ?? '/profile'

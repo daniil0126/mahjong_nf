@@ -2,32 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-declare global {
-  interface BluetoothRemoteGATTCharacteristic extends EventTarget {
-    readonly value?: DataView
-    startNotifications(): Promise<BluetoothRemoteGATTCharacteristic>
-    stopNotifications(): Promise<BluetoothRemoteGATTCharacteristic>
-  }
-  interface BluetoothRemoteGATTService {
-    getCharacteristic(uuid: string): Promise<BluetoothRemoteGATTCharacteristic>
-  }
-  interface BluetoothRemoteGATTServer {
-    connect(): Promise<BluetoothRemoteGATTServer>
-    disconnect(): void
-    getPrimaryService(uuid: string): Promise<BluetoothRemoteGATTService>
-  }
-  interface BluetoothDevice extends EventTarget {
-    readonly name?: string
-    readonly gatt?: BluetoothRemoteGATTServer
-  }
-  interface Bluetooth {
-    requestDevice(options: { filters: Array<{ services: string[] }> }): Promise<BluetoothDevice>
-  }
-  interface Navigator {
-    readonly bluetooth?: Bluetooth
-  }
-}
-
 const HR_SERVICE = 'heart_rate'
 const HR_MEASUREMENT_CHARACTERISTIC = 'heart_rate_measurement'
 const BASELINE_SAMPLES = 30
