@@ -1,16 +1,17 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { RefreshCcw } from 'lucide-react'
+import { RefreshCcw, X } from 'lucide-react'
 import { GameState, LayoutName } from '@/types/game'
 import { formatTime } from '@/lib/utils'
 
 interface GameOverModalProps {
   state: GameState
   onNewGame: (layout?: LayoutName) => void
+  onClose: () => void
 }
 
-export default function GameOverModal({ state, onNewGame }: GameOverModalProps) {
+export default function GameOverModal({ state, onNewGame, onClose }: GameOverModalProps) {
   const won = state.isComplete
   const elapsed = Math.floor(state.elapsedTime / 1000)
 
@@ -24,8 +25,15 @@ export default function GameOverModal({ state, onNewGame }: GameOverModalProps) 
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', bounce: 0.4 }}
-        className="bg-white dark:bg-stone-900 rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center"
+        className="relative bg-white dark:bg-stone-900 rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center"
       >
+        <button
+          onClick={onClose}
+          aria-label="Закрыть"
+          className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full text-stone-500 hover:text-stone-800 hover:bg-stone-100 dark:hover:text-stone-100 dark:hover:bg-stone-800 transition-colors"
+        >
+          <X size={18} />
+        </button>
         {won ? (
           <>
             <div className="text-6xl mb-4">🏆</div>

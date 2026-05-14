@@ -21,12 +21,14 @@ export default function GameBoard({ state, onTileClick }: GameBoardProps) {
   }, [])
 
   const { tileWidth, tileHeight, depthOffset, boardWidth, boardHeight } = useMemo(() => {
-    const active = state.tiles.filter(t => !t.removed)
-    if (active.length === 0) return { tileWidth: 52, tileHeight: 64, depthOffset: 8, boardWidth: 0, boardHeight: 0 }
+    // Use ALL tiles (including removed) for dimensions — removed tiles keep their grid
+    // coordinates and only fade out visually, so the playing area stays stable for the
+    // whole session. Otherwise the board collapses to 0x0 when the player wins.
+    if (state.tiles.length === 0) return { tileWidth: 52, tileHeight: 64, depthOffset: 8, boardWidth: 0, boardHeight: 0 }
 
-    const maxCol = Math.max(...active.map(t => t.col))
-    const maxRow = Math.max(...active.map(t => t.row))
-    const maxLayer = Math.max(...active.map(t => t.layer))
+    const maxCol = Math.max(...state.tiles.map(t => t.col))
+    const maxRow = Math.max(...state.tiles.map(t => t.row))
+    const maxLayer = Math.max(...state.tiles.map(t => t.layer))
 
     // Reserve lateral space for the 3D offset between layers.
     const tileWidth = Math.max(36, Math.min(56, Math.floor((containerWidth - 40) / ((maxCol / 2) + maxLayer * 0.6 + 2))))

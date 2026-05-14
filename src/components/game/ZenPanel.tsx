@@ -1,33 +1,38 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Volume2, VolumeX, X, Heart, HeartOff } from 'lucide-react'
+import { Volume2, VolumeX, X, Heart, HeartOff, Wind } from 'lucide-react'
 import type { ZenSettings, ZenTheme } from '@/lib/zen-mode'
 import { ZEN_THEMES } from '@/lib/zen-mode'
+import { BREATHING_TECHNIQUES, type BreathingTechniqueId } from '@/lib/breathing'
 import { cn } from '@/lib/utils'
 
 interface ZenPanelProps {
   settings: ZenSettings
   stress: number
   hr: { connected: boolean; bpm: number | null; baseline: number | null } | null
+  breathing: BreathingTechniqueId | null
   onClose: () => void
   onSetTheme: (t: ZenTheme) => void
   onSetAudioEnabled: (v: boolean) => void
   onSetAudioVolume: (v: number) => void
   onConnectHR: () => void
   onDisconnectHR: () => void
+  onSetBreathing: (id: BreathingTechniqueId | null) => void
 }
 
 export default function ZenPanel({
   settings,
   stress,
   hr,
+  breathing,
   onClose,
   onSetTheme,
   onSetAudioEnabled,
   onSetAudioVolume,
   onConnectHR,
   onDisconnectHR,
+  onSetBreathing,
 }: ZenPanelProps) {
   const stressPct = Math.round(stress * 100)
 
@@ -108,6 +113,45 @@ export default function ZenPanel({
             aria-label="Громкость"
           />
         </div>
+      </div>
+
+      <div className="border-t border-stone-200 dark:border-stone-700 pt-3">
+        <div className="text-xs mb-2 text-stone-600 dark:text-stone-400 flex items-center gap-1.5">
+          <Wind size={12} /> Дыхание
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            onClick={() => onSetBreathing(null)}
+            className={cn(
+              'p-2 rounded-xl text-xs font-medium transition-all',
+              breathing === null
+                ? 'bg-amber-500 text-white shadow-md'
+                : 'bg-stone-100 dark:bg-stone-800 hover:bg-amber-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200',
+            )}
+          >
+            Выкл
+          </button>
+          {(Object.values(BREATHING_TECHNIQUES)).map(t => (
+            <button
+              key={t.id}
+              onClick={() => onSetBreathing(t.id)}
+              className={cn(
+                'p-2 rounded-xl text-xs font-medium transition-all flex flex-col items-center gap-0.5',
+                breathing === t.id
+                  ? 'bg-amber-500 text-white shadow-md'
+                  : 'bg-stone-100 dark:bg-stone-800 hover:bg-amber-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200',
+              )}
+              title={t.description}
+            >
+              <span>{t.name}</span>
+            </button>
+          ))}
+        </div>
+        {breathing && (
+          <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-1.5 leading-snug">
+            {BREATHING_TECHNIQUES[breathing].description}
+          </p>
+        )}
       </div>
 
       <div className="border-t border-stone-200 dark:border-stone-700 pt-3">

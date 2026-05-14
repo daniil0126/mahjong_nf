@@ -22,9 +22,11 @@ import { useZenMode } from '@/lib/zen-mode'
 import { useHeartRate } from '@/lib/heart-rate'
 import { loadSavedGame, saveGame, clearSavedGame, getLastServerSaveKey, setLastServerSaveKey } from '@/lib/game-persistence'
 import { createClient } from '@/lib/supabase/client'
+import type { BreathingTechniqueId } from '@/lib/breathing'
 
 const ZenOverlay = dynamic(() => import('@/components/game/ZenOverlay'), { ssr: false })
 const ZenPanel = dynamic(() => import('@/components/game/ZenPanel'), { ssr: false })
+const BreathingOverlay = dynamic(() => import('@/components/game/BreathingOverlay'), { ssr: false })
 
 const TUTORIAL_KEY = 'mahjong-zen-tutorial-seen'
 const noopSubscribe = () => () => {}
@@ -68,6 +70,12 @@ export default function GamePage() {
   const { settings, toggle, setTheme, setAudioEnabled, setAudioVolume } = useZenMode()
   const { state: hr, connect: connectHR, disconnect: disconnectHR } = useHeartRate()
   const [showZenPanel, setShowZenPanel] = useState(false)
+  const [breathingId, setBreathingId] = useState<BreathingTechniqueId | null>(null)
+  // Track which game session the user has dismissed the GameOverModal for, keyed by
+  // startTime. When a new game starts, startTime changes, so the modal shows again
+  // without needing an effect to reset state.
+  const [dismissedSessionStart, setDismissedSessionStart] = useState<number | null>(null)
+  const gameOverVisible = (state.isComplete || state.isDeadlock) && dismissedSessionStart !== state.startTime
   const wasStressedRef = useRef(false)
 
   const closeTutorial = () => {
@@ -138,6 +146,14 @@ export default function GamePage() {
       return
     }
     dispatch({ type: 'RESTORE', state: saved.state })
+    // If we're restoring an already-finished game, the user has already seen the modal
+    // in the previous session. Don't pop it up again on a navigation back. The setState
+    // here synchronises local React state with the external (localStorage) source of
+    // truth — that's exactly what effects are for; the lint rule is overly cautious.
+    if (saved.state.isComplete || saved.state.isDeadlock) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDismissedSessionStart(saved.state.startTime)
+    }
   }, [currentUserId])
 
   // Debounced save: TICK fires every 100ms — writing on each would mean 10 localStorage
@@ -247,6 +263,10 @@ export default function GamePage() {
         />
       )}
 
+      {settings.active && breathingId && (
+        <BreathingOverlay key={breathingId} techniqueId={breathingId} />
+      )}
+
       <div className="max-w-5xl mx-auto px-4 py-6 flex flex-col gap-4">
         <GameControls
           state={state}
@@ -269,10 +289,11 @@ export default function GamePage() {
           <GameBoard state={state} onTileClick={handleTileClick} />
         </div>
 
-        {(state.isComplete || state.isDeadlock) && (
+        {gameOverVisible && (
           <GameOverModal
             state={state}
             onNewGame={(layout) => dispatch({ type: 'NEW_GAME', layout })}
+            onClose={() => setDismissedSessionStart(state.startTime)}
           />
         )}
 
@@ -287,12 +308,14 @@ export default function GamePage() {
               settings={settings}
               stress={stress}
               hr={{ connected: hr.connected, bpm: hr.bpm, baseline: hr.baseline }}
+              breathing={breathingId}
               onClose={() => setShowZenPanel(false)}
               onSetTheme={setTheme}
               onSetAudioEnabled={setAudioEnabled}
               onSetAudioVolume={setAudioVolume}
               onConnectHR={connectHR}
               onDisconnectHR={disconnectHR}
+              onSetBreathing={setBreathingId}
             />
           ) : (
             <motion.button
