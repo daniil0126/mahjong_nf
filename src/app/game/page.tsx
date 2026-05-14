@@ -20,6 +20,8 @@ import TutorialModal from '@/components/game/TutorialModal'
 import { useStressDetector } from '@/lib/stress-detector'
 import { useZenMode } from '@/lib/zen-mode'
 import { useHeartRate } from '@/lib/heart-rate'
+import { loadSavedGame, saveGame, clearSavedGame, getLastServerSaveKey, setLastServerSaveKey } from '@/lib/game-persistence'
+import { createClient } from '@/lib/supabase/client'
 
 const ZenOverlay = dynamic(() => import('@/components/game/ZenOverlay'), { ssr: false })
 const ZenPanel = dynamic(() => import('@/components/game/ZenPanel'), { ssr: false })
@@ -38,6 +40,7 @@ type Action =
   | { type: 'SHUFFLE' }
   | { type: 'NEW_GAME'; layout?: LayoutName }
   | { type: 'TICK'; ms: number }
+  | { type: 'RESTORE'; state: GameState }
 
 function reducer(state: GameState, action: Action): GameState {
   switch (action.type) {
@@ -46,6 +49,7 @@ function reducer(state: GameState, action: Action): GameState {
     case 'HINT': return applyHint(state)
     case 'SHUFFLE': return shuffleTiles(state)
     case 'NEW_GAME': return createGame(action.layout ?? state.layout)
+    case 'RESTORE': return action.state
     case 'TICK':
       if (state.isComplete || state.isDeadlock) return state
       return { ...state, elapsedTime: state.elapsedTime + action.ms }
@@ -77,6 +81,119 @@ export default function GamePage() {
   useEffect(() => {
     tilesRef.current = state.tiles
   }, [state.tiles])
+
+  // Warm up the zen chunks in the background so the first toggle doesn't pay
+  // chunk-download + first-paint cost. Runs once on mount, off the critical path.
+  useEffect(() => {
+    const run = () => {
+      void import('@/components/game/ZenOverlay')
+      void import('@/components/game/ZenPanel')
+    }
+    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback
+    if (typeof ric === 'function') ric(run)
+    else setTimeout(run, 600)
+  }, [])
+
+  // Track current Supabase user. `undefined` = not yet checked, `null` = anonymous,
+  // string = signed-in user id. We hold off on saving/restoring until we know who we are
+  // so we don't accidentally show user A's saved game to user B.
+  const [currentUserId, setCurrentUserId] = useState<string | null | undefined>(undefined)
+  useEffect(() => {
+    const supabase = createClient()
+    let mounted = true
+    supabase.auth.getUser().then(({ data }) => {
+      if (mounted) setCurrentUserId(data.user?.id ?? null)
+    })
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted) setCurrentUserId(session?.user?.id ?? null)
+    })
+    return () => { mounted = false; sub.subscription.unsubscribe() }
+  }, [])
+
+  // Restore the in-progress game from localStorage, OR reset on account switch.
+  // Reacts to currentUserId changes so logging out / signing in as a different user
+  // immediately discards the previous owner's saved state.
+  const restoredOwnerRef = useRef<string | null | undefined>(undefined)
+  useEffect(() => {
+    if (currentUserId === undefined) return
+    if (restoredOwnerRef.current === currentUserId) return
+
+    const previousOwner = restoredOwnerRef.current
+    restoredOwnerRef.current = currentUserId
+
+    if (previousOwner !== undefined) {
+      // Auth state changed mid-session — drop any previous owner's saved/cached state.
+      clearSavedGame()
+      setLastServerSaveKey('')
+      dispatch({ type: 'NEW_GAME' })
+      return
+    }
+
+    // First-time mount — try to restore, but only if the saved state belongs to us.
+    const saved = loadSavedGame()
+    if (!saved) return
+    if (saved.userId !== currentUserId) {
+      clearSavedGame()
+      setLastServerSaveKey('')
+      return
+    }
+    dispatch({ type: 'RESTORE', state: saved.state })
+  }, [currentUserId])
+
+  // Debounced save: TICK fires every 100ms — writing on each would mean 10 localStorage
+  // writes per second. Wait 600ms of quiet (or save on tab-hide) before flushing.
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    if (restoredOwnerRef.current === undefined) return
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    const owner = currentUserId ?? null
+    saveTimerRef.current = setTimeout(() => saveGame(state, owner), 600)
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    }
+  }, [state, currentUserId])
+
+  // Flush a pending save when the tab goes hidden or unloads, so we don't lose
+  // up-to-600ms of progress if the user closes mid-debounce.
+  useEffect(() => {
+    const owner = currentUserId ?? null
+    const flush = () => saveGame(state, owner)
+    const onVisibility = () => { if (document.hidden) flush() }
+    window.addEventListener('pagehide', flush)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      window.removeEventListener('pagehide', flush)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [state, currentUserId])
+
+  // Push a completed game (win OR deadlock) to Supabase. Anonymous users are skipped.
+  // Dedup via a localStorage key — if the user reloads while still on the GameOverModal,
+  // we don't insert the same row twice.
+  useEffect(() => {
+    const finished = state.isComplete || state.isDeadlock
+    if (!finished) return
+    const dedupKey = `${state.layout}|${state.score}|${Math.round(state.elapsedTime / 1000)}|${state.moves}|${state.isComplete ? 'w' : 'd'}`
+    if (getLastServerSaveKey() === dedupKey) return
+
+    let cancelled = false
+    ;(async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user || cancelled) return
+      const { error } = await supabase.from('games').insert({
+        user_id: user.id,
+        layout: state.layout,
+        score: state.score,
+        time_sec: Math.round(state.elapsedTime / 1000),
+        moves: state.moves,
+        hints_used: state.hintsUsed,
+        completed: state.isComplete,
+      })
+      if (!error && !cancelled) setLastServerSaveKey(dedupKey)
+    })()
+    return () => { cancelled = true }
+  }, [state.isComplete, state.isDeadlock, state.layout, state.score, state.elapsedTime, state.moves, state.hintsUsed])
 
   const handleTileClick = useCallback((id: string) => {
     const tiles = tilesRef.current
@@ -190,7 +307,7 @@ export default function GamePage() {
               hidden={!settings.active}
             >
               <Heart size={14} className="text-rose-500" />
-              <span className="text-xs font-medium">Анти-стресс</span>
+              <span className="text-xs font-medium"></span>
             </motion.button>
           )}
         </AnimatePresence>
